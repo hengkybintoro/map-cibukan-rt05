@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cibukan RT 05 RW 07</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <img src="assets/logo.png" alt="Logo RT 05" class="header-logo">
+    <h1>Cibukan RT 05 / RW 07</h1>
+</header>
+
+<!-- <div class="road">Jalan Utama</div> -->
+
+<div id="map-container"></div>
+
+<!-- Modal -->
+<div id="modal" class="hidden">
+    <div class="modal-content">
+        <button id="close" aria-label="Tutup">&times;</button>
+
+        <div class="modal-header">
+            <div class="modal-icon">🏠</div>
+            <div>
+                <h2>Informasi Rumah</h2>
+                <p class="modal-subtitle">No. <span id="houseNumber"></span></p>
+            </div>
+        </div>
+
+        <div class="modal-status-wrap">
+            <span id="houseStatus" class="status-badge"></span>
+        </div>
+
+        <div class="modal-grid">
+            <div class="modal-field">
+                <span class="field-label">Pemilik</span>
+                <span class="field-value" id="houseOwner"></span>
+            </div>
+            <div class="modal-field">
+                <span class="field-label">Alamat</span>
+                <span class="field-value" id="houseAddress"></span>
+            </div>
+            <div class="modal-field">
+                <span class="field-label">Luas Tanah</span>
+                <span class="field-value" id="houseLT"></span>
+            </div>
+            <div class="modal-field">
+                <span class="field-label">Luas Bangunan</span>
+                <span class="field-value" id="houseLB"></span>
+            </div>
+            <div class="modal-field">
+                <span class="field-label">Tipe</span>
+                <span class="field-value" id="houseTipe"></span>
+            </div>
+        </div>
+
+        <div class="modal-harga">
+            <span class="field-label">Harga</span>
+            <span class="harga-value" id="houseHarga"></span>
+        </div>
+
+        <button class="btn-marketing" onclick="alert('Silakan hubungi tim marketing kami.')">
+            📞 Hubungi Marketing
+        </button>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

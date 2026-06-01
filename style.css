@@ -1,0 +1,270 @@
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #475569;
+    color: #1e293b;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+header {
+    background: #1e40af;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.header-logo {
+    height: 80px;
+    width: auto;
+}
+
+header h1 {
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
+
+/* ── Road banner ──────────────────────────────────────────────────────────── */
+/* .road {
+    background: #475569;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 1px;
+} */
+
+/* ── Map container ────────────────────────────────────────────────────────── */
+#map-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 24px auto;
+    padding: 0 16px;
+}
+
+.svg-wrapper {
+    width: 100%;
+    display: block;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: relative;
+}
+
+.svg-wrapper svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ── SVG label interaction ────────────────────────────────────────────────── */
+/* Hover on house-label group: highlight circle */
+g.house-label:hover circle {
+    fill: #f59e0b !important;
+    fill-opacity: 1 !important;
+}
+
+/* Selected state (toggled via JS) */
+g.house-label.selected-label circle {
+    fill: #f59e0b !important;
+    fill-opacity: 1 !important;
+    filter: drop-shadow(0 0 4px rgba(245,158,11,0.7));
+}
+
+/* Hover on clickable kavling polygon */
+path[data-house-id]:hover {
+    fill-opacity: 0.6 !important;
+}
+
+/* ── Modal overlay ────────────────────────────────────────────────────────── */
+#modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeIn 0.15s ease;
+}
+
+#modal.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* ── Modal card ───────────────────────────────────────────────────────────── */
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+    animation: popUp 0.2s ease;
+    position: relative;
+}
+
+@keyframes popUp {
+    from { transform: scale(0.9); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+/* Close button */
+#close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+#close:hover { background: rgba(255,255,255,0.35); }
+
+/* Modal header gradient */
+.modal-header {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    padding: 20px 20px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.modal-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.modal-header h2 {
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.modal-subtitle {
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+/* Status badge */
+.modal-status-wrap {
+    padding: 12px 20px 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* JS sets textContent; CSS targets it via attribute trick — 
+   instead we style generically and let JS add a class if needed */
+.status-badge:empty::before { content: "—"; color: #94a3b8; }
+
+/* ── Info grid ────────────────────────────────────────────────────────────── */
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 14px 20px;
+}
+
+.modal-field {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+/* Alamat spans full width */
+.modal-field:nth-child(2) {
+    grid-column: 1 / -1;
+}
+
+.field-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.field-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.field-value:empty::before { content: "—"; color: #94a3b8; font-weight: 400; }
+
+/* ── Harga section ────────────────────────────────────────────────────────── */
+.modal-harga {
+    background: #eff6ff;
+    margin: 0 20px;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.harga-value {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1d4ed8;
+}
+
+.harga-value:empty::before { content: "—"; color: #94a3b8; font-weight: 400; font-size: 14px; }
+
+/* ── Marketing button ─────────────────────────────────────────────────────── */
+.btn-marketing {
+    display: block;
+    width: calc(100% - 40px);
+    margin: 16px 20px 20px;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-marketing:hover { background: #1d4ed8; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .modal-grid { grid-template-columns: 1fr; }
+    .modal-field:nth-child(2) { grid-column: 1; }
+    .modal-content { border-radius: 12px; }
+}
