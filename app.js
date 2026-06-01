@@ -1,166 +1,115 @@
 let houses = [];
+let activeLabels = [];  // track rendered label elements
 
 async function loadHouses() {
     try {
-        // ── 1. Load SVG ────────────────────────────────────────────────────────
-        const svgResponse = await fetch("assets/map.svg");
-        if (!svgResponse.ok) throw new Error("SVG fetch failed: " + svgResponse.statusText);
-        const svgText = await svgResponse.text();
-
         const mapContainer = document.getElementById("map-container");
         if (!mapContainer) return;
 
-        // Parse and mount SVG
-        const parser = new DOMParser();
-        const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
-        const svg = svgDoc.querySelector("svg");
-        if (!svg) throw new Error("No <svg> element found");
-
-        // Make SVG responsive
-        svg.removeAttribute("width");
-        svg.removeAttribute("height");
-        svg.style.width = "100%";
-        svg.style.height = "auto";
-        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-
+        // ── 1. Build map wrapper with satellite image ──────────────────────────
         mapContainer.innerHTML = "";
+
         const wrapper = document.createElement("div");
-        wrapper.className = "svg-wrapper";
-        wrapper.style.position = "relative";
-        wrapper.appendChild(svg);
+        wrapper.className = "map-wrapper";
+
+        const img = document.createElement("img");
+        img.src = "assets/sample_map.png";
+        img.alt = "Foto Satelit RT 05 RW 03";
+        img.className = "map-image";
+        // Wait for image to load before positioning labels
+        img.onload = () => renderLabels(wrapper);
+        img.onerror = () => console.error("Gagal memuat foto peta.");
+
+        const overlay = document.createElement("div");
+        overlay.className = "map-overlay";
+        overlay.id = "map-overlay";
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(overlay);
         mapContainer.appendChild(wrapper);
 
         // ── 2. Load house data ─────────────────────────────────────────────────
         const dataResponse = await fetch("houses.json");
         if (!dataResponse.ok) throw new Error("JSON fetch failed: " + dataResponse.statusText);
         houses = await dataResponse.json();
-        console.debug("Houses loaded from JSON:", houses.length);
 
         // ── Filter by wilayah (if set) ─────────────────────────────────────────
-        // To show only a specific area, set WILAYAH_FILTER to e.g. "RT05".
-        // Leave as null (or "") to show all houses.
-        const WILAYAH_FILTER = "RT05";
+        // Set WILAYAH_FILTER ke e.g. "RT05" untuk hanya tampilkan wilayah tertentu.
+        // Biarkan null untuk tampilkan semua rumah yang punya map_x dan map_y.
+        const WILAYAH_FILTER = null;
         if (WILAYAH_FILTER) {
             houses = houses.filter(h => (h.wilayah ?? "") === WILAYAH_FILTER);
         }
 
-        console.debug("Houses after wilayah filter:", houses.length);
-
-        // Build a quick lookup by id (only filtered houses are included)
-        const houseById = {};
-        houses.forEach(h => { houseById[h.id] = h; });
-
-        // ── 3. Wire up label clicks directly on SVG elements ───────────────────
-        // The SVG already has <g class="house-label" data-id="N"> elements with
-        // correct cx/cy positions. We just attach click listeners to them.
-        const labelGroups = svg.querySelectorAll("g.house-label");
-        console.debug("House label groups found in SVG:", labelGroups.length);
-
-        // Hide labels that are not in houseById (filtered out by wilayah)
-        labelGroups.forEach(g => {
-            const id = parseInt(g.getAttribute("data-id"), 10);
-            if (!houseById[id]) {
-                g.style.display = "none";
-            }
-        });
-
-        // Remove inline onclick attributes so we fully control behaviour here
-        labelGroups.forEach(g => {
-            g.removeAttribute("onclick");
-            const id = parseInt(g.getAttribute("data-id"), 10);
-            const house = houseById[id];
-            if (!house) return;
-
-            g.style.cursor = "pointer";
-
-            g.addEventListener("click", (e) => {
-                e.stopPropagation();
-                selectLabel(id, labelGroups);
-                showHouse(house);
-            });
-        });
-
-        // ── 4. Also wire up the underlying kavling polygons ────────────────────
-        // Gray fill polygons don't have ids, so we match them spatially:
-        // find the polygon whose centroid is closest to each label's cx/cy.
-        const grayPaths = Array.from(
-            svg.querySelectorAll('path[fill="rgb(85.098039%, 81.568627%, 78.823529%)"]')
-        ).filter(p => {
-            try { const b = p.getBBox(); return b.width > 2 && b.height > 2; } catch { return false; }
-        });
-
-        if (grayPaths.length > 0) {
-            // For each house label, find the closest polygon and wire it up
-            labelGroups.forEach(g => {
-                const id = parseInt(g.getAttribute("data-id"), 10);
-                const house = houseById[id];
-                if (!house) return;
-
-                const cx = house.cx;
-                const cy = house.cy;
-
-                let bestPath = null;
-                let bestDist = Infinity;
-
-                grayPaths.forEach(p => {
-                    try {
-                        const b = p.getBBox();
-                        const pcx = b.x + b.width / 2;
-                        const pcy = b.y + b.height / 2;
-                        const dist = Math.hypot(pcx - cx, pcy - cy);
-                        if (dist < bestDist) {
-                            bestDist = dist;
-                            bestPath = p;
-                        }
-                    } catch {}
-                });
-
-                if (bestPath && bestDist < 200) {
-                    bestPath.style.cursor = "pointer";
-                    bestPath.addEventListener("click", (e) => {
-                        e.stopPropagation();
-                        selectLabel(id, labelGroups);
-                        showHouse(house);
-                    });
-                    // Mark so we don't double-bind
-                    bestPath.dataset.houseId = String(id);
-                }
-            });
-        }
-
-        console.debug("Houses loaded:", houses.length);
-        console.debug("Labels wired:", labelGroups.length);
+        // Jika gambar sudah selesai load sebelum data, render sekarang
+        if (img.complete) renderLabels(wrapper);
 
     } catch (err) {
-        console.error("Failed to load map or houses:", err);
+        console.error("Gagal memuat data:", err);
     }
 }
 
-// ── Highlight selected label ───────────────────────────────────────────────────
-function selectLabel(activeId, labelGroups) {
-    labelGroups.forEach(g => {
-        const circle = g.querySelector("circle");
-        const isActive = parseInt(g.getAttribute("data-id"), 10) === activeId;
-        if (circle) {
-            circle.style.fill = isActive ? "#f59e0b" : "";  // amber when selected
-            circle.style.fillOpacity = isActive ? "1" : "";
-        }
-        g.classList.toggle("selected-label", isActive);
+// ── Render label di atas foto ──────────────────────────────────────────────────
+function renderLabels(wrapper) {
+    const overlay = wrapper.querySelector("#map-overlay");
+    if (!overlay) return;
+    overlay.innerHTML = "";
+    activeLabels = [];
+
+    houses.forEach((house) => {
+        // Lewati rumah yang belum punya koordinat foto
+        if (house.map_x == null || house.map_y == null ||
+            house.map_x === "" || house.map_y === "") return;
+
+        const label = document.createElement("div");
+        label.className = "map-label";
+        label.textContent = house.nomor;
+        label.title = house.pemilik ? `No.${house.nomor} — ${house.pemilik}` : `No.${house.nomor}`;
+
+        // Posisi berdasarkan persentase terhadap ukuran gambar
+        label.style.left = `${house.map_x}%`;
+        label.style.top  = `${house.map_y}%`;
+
+        label.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selectLabel(label);
+            showHouse(house);
+        });
+
+        overlay.appendChild(label);
+        activeLabels.push({ label, house });
     });
+
+    console.debug(`Labels rendered: ${activeLabels.length} / ${houses.length} total`);
+}
+
+// ── Highlight label yang dipilih ───────────────────────────────────────────────
+function selectLabel(activeEl) {
+    activeLabels.forEach(({ label }) => label.classList.remove("selected"));
+    activeEl.classList.add("selected");
 }
 
 // ── Show modal ─────────────────────────────────────────────────────────────────
 function showHouse(house) {
     const el = (id) => document.getElementById(id);
 
-    if (el("houseNumber")) el("houseNumber").textContent = house.id;
-    if (el("houseOwner"))  el("houseOwner").textContent  = house.pemilik  || "-";
-    if (el("houseAddress")) el("houseAddress").textContent = house.address || "-";
-    if (el("houseLT"))     el("houseLT").textContent     = house.luas_tanah    ? house.luas_tanah + " m²"    : "-";
-    if (el("houseLB"))     el("houseLB").textContent     = house.luas_bangunan ? house.luas_bangunan + " m²" : "-";
-    if (el("houseTipe"))   el("houseTipe").textContent   = house.tipe   || "-";
-    if (el("houseStatus")) el("houseStatus").textContent = house.status || "-";
-    if (el("houseHarga"))  el("houseHarga").textContent  = house.harga  || "Hubungi Marketing";
+    if (el("houseNumber"))  el("houseNumber").textContent  = house.nomor;
+    if (el("houseOwner"))   el("houseOwner").textContent   = house.pemilik       || "-";
+    if (el("houseAddress")) el("houseAddress").textContent = house.address        || "-";
+    if (el("houseLT"))      el("houseLT").textContent      = house.luas_tanah     ? house.luas_tanah     + " m²" : "-";
+    if (el("houseLB"))      el("houseLB").textContent      = house.luas_bangunan  ? house.luas_bangunan  + " m²" : "-";
+    if (el("houseTipe"))    el("houseTipe").textContent    = house.tipe           || "-";
+    if (el("houseStatus"))  el("houseStatus").textContent  = house.status         || "-";
+    if (el("houseHarga"))   el("houseHarga").textContent   = house.harga          || "-";
+
+    // Warna badge status
+    const badge = el("houseStatus");
+    if (badge) {
+        badge.className = "status-badge";
+        if (house.status === "Terjual")   badge.classList.add("status-sold");
+        else if (house.status === "Dipesan") badge.classList.add("status-reserved");
+        else badge.classList.add("status-available");
+    }
 
     el("modal").classList.remove("hidden");
 }
@@ -168,16 +117,7 @@ function showHouse(house) {
 // ── Close modal ────────────────────────────────────────────────────────────────
 document.getElementById("close").addEventListener("click", () => {
     document.getElementById("modal").classList.add("hidden");
-
-    // Reset all label colours back to default
-    const svg = document.querySelector("#map-container svg");
-    if (svg) {
-        svg.querySelectorAll("g.house-label circle").forEach(circle => {
-            circle.style.fill = "";
-            circle.style.fillOpacity = "";
-        });
-        svg.querySelectorAll("g.house-label").forEach(g => g.classList.remove("selected-label"));
-    }
+    activeLabels.forEach(({ label }) => label.classList.remove("selected"));
 });
 
 loadHouses();

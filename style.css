@@ -3,25 +3,19 @@
 
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: #475569;
+    background: #f0f4f8;
     color: #1e293b;
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
 header {
     background: #1e40af;
-    padding: 16px 24px;
+    padding: 14px 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.header-logo {
-    height: 80px;
-    width: auto;
 }
 
 header h1 {
@@ -31,8 +25,13 @@ header h1 {
     letter-spacing: 0.4px;
 }
 
+.header-logo {
+    height: 40px;
+    width: auto;
+}
+
 /* ── Road banner ──────────────────────────────────────────────────────────── */
-/* .road {
+.road {
     background: #475569;
     color: white;
     text-align: center;
@@ -40,7 +39,7 @@ header h1 {
     font-weight: 600;
     font-size: 14px;
     letter-spacing: 1px;
-} */
+}
 
 /* ── Map container ────────────────────────────────────────────────────────── */
 #map-container {
@@ -50,46 +49,75 @@ header h1 {
     padding: 0 16px;
 }
 
-.svg-wrapper {
-    width: 100%;
-    display: block;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    overflow: hidden;
+/* ── Map wrapper: foto + overlay ──────────────────────────────────────────── */
+.map-wrapper {
     position: relative;
+    display: inline-block;  /* shrink to image size */
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    background: #1e293b;
+    line-height: 0;         /* remove gap below img */
 }
 
-.svg-wrapper svg {
+.map-image {
     width: 100%;
     height: auto;
     display: block;
 }
 
-/* ── SVG label interaction ────────────────────────────────────────────────── */
-/* Hover on house-label group: highlight circle */
-g.house-label:hover circle {
-    fill: #f59e0b !important;
-    fill-opacity: 1 !important;
+/* ── Overlay: tepat di atas foto ──────────────────────────────────────────── */
+.map-overlay {
+    position: absolute;
+    inset: 0;               /* top:0 right:0 bottom:0 left:0 */
+    pointer-events: none;   /* klik tembus ke label saja */
 }
 
-/* Selected state (toggled via JS) */
-g.house-label.selected-label circle {
-    fill: #f59e0b !important;
-    fill-opacity: 1 !important;
-    filter: drop-shadow(0 0 4px rgba(245,158,11,0.7));
+/* ── Label setiap rumah ───────────────────────────────────────────────────── */
+.map-label {
+    position: absolute;
+    transform: translate(-50%, -50%);   /* titik tengah label = koordinat */
+    pointer-events: auto;
+    cursor: pointer;
+
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    font-family: 'Segoe UI', Arial, sans-serif;
+
+    transition: transform 0.15s, background 0.15s;
+    user-select: none;
 }
 
-/* Hover on clickable kavling polygon */
-path[data-house-id]:hover {
-    fill-opacity: 0.6 !important;
+.map-label:hover {
+    background: #f59e0b;
+    transform: translate(-50%, -50%) scale(1.25);
+    z-index: 10;
+}
+
+.map-label.selected {
+    background: #f59e0b;
+    transform: translate(-50%, -50%) scale(1.3);
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.4), 0 2px 8px rgba(0,0,0,0.4);
+    z-index: 20;
 }
 
 /* ── Modal overlay ────────────────────────────────────────────────────────── */
 #modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0,0,0,0.5);
     z-index: 10000;
     display: flex;
     align-items: center;
@@ -98,9 +126,7 @@ path[data-house-id]:hover {
     animation: fadeIn 0.15s ease;
 }
 
-#modal.hidden {
-    display: none;
-}
+#modal.hidden { display: none; }
 
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -124,7 +150,6 @@ path[data-house-id]:hover {
     to   { transform: scale(1);   opacity: 1; }
 }
 
-/* Close button */
 #close {
     position: absolute;
     top: 14px;
@@ -145,7 +170,6 @@ path[data-house-id]:hover {
 }
 #close:hover { background: rgba(255,255,255,0.35); }
 
-/* Modal header gradient */
 .modal-header {
     background: linear-gradient(135deg, #1e40af, #3b82f6);
     padding: 20px 20px 18px;
@@ -154,27 +178,14 @@ path[data-house-id]:hover {
     gap: 14px;
 }
 
-.modal-icon {
-    font-size: 32px;
-    line-height: 1;
-}
+.modal-icon { font-size: 32px; line-height: 1; }
 
-.modal-header h2 {
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-}
+.modal-header h2 { color: white; font-size: 16px; font-weight: 700; }
 
-.modal-subtitle {
-    color: rgba(255,255,255,0.8);
-    font-size: 13px;
-    margin-top: 2px;
-}
+.modal-subtitle { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 2px; }
 
-/* Status badge */
-.modal-status-wrap {
-    padding: 12px 20px 0;
-}
+/* ── Status badge ─────────────────────────────────────────────────────────── */
+.modal-status-wrap { padding: 12px 20px 0; }
 
 .status-badge {
     display: inline-block;
@@ -184,9 +195,9 @@ path[data-house-id]:hover {
     font-weight: 600;
 }
 
-/* JS sets textContent; CSS targets it via attribute trick — 
-   instead we style generically and let JS add a class if needed */
-.status-badge:empty::before { content: "—"; color: #94a3b8; }
+.status-available { background: #dcfce7; color: #15803d; }
+.status-sold      { background: #fee2e2; color: #b91c1c; }
+.status-reserved  { background: #fef9c3; color: #92400e; }
 
 /* ── Info grid ────────────────────────────────────────────────────────────── */
 .modal-grid {
@@ -205,10 +216,7 @@ path[data-house-id]:hover {
     gap: 3px;
 }
 
-/* Alamat spans full width */
-.modal-field:nth-child(2) {
-    grid-column: 1 / -1;
-}
+.modal-field:nth-child(2) { grid-column: 1 / -1; }  /* Alamat full width */
 
 .field-label {
     font-size: 11px;
@@ -226,10 +234,10 @@ path[data-house-id]:hover {
 
 .field-value:empty::before { content: "—"; color: #94a3b8; font-weight: 400; }
 
-/* ── Harga section ────────────────────────────────────────────────────────── */
+/* ── Harga ────────────────────────────────────────────────────────────────── */
 .modal-harga {
     background: #eff6ff;
-    margin: 0 20px;
+    margin: 0 20px 20px;
     border-radius: 10px;
     padding: 12px 16px;
     display: flex;
@@ -245,7 +253,7 @@ path[data-house-id]:hover {
 
 .harga-value:empty::before { content: "—"; color: #94a3b8; font-weight: 400; font-size: 14px; }
 
-/* ── Marketing button ─────────────────────────────────────────────────────── */
+/* ── Tombol marketing ─────────────────────────────────────────────────────── */
 .btn-marketing {
     display: block;
     width: calc(100% - 40px);
@@ -266,5 +274,5 @@ path[data-house-id]:hover {
 @media (max-width: 480px) {
     .modal-grid { grid-template-columns: 1fr; }
     .modal-field:nth-child(2) { grid-column: 1; }
-    .modal-content { border-radius: 12px; }
+    .map-label { width: 20px; height: 20px; font-size: 9px; }
 }
